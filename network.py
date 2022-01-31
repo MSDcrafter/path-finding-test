@@ -186,28 +186,62 @@ def main():
 
 
         net.nodes[true_node_id].is_checked = True
-        connections = get_connected_nodes_and_lengths(node_id, net)
+
+        connections = get_connections(node_id, net)
+        # for connection in connections:
+
         for connection in connections:
-            node_connection_id = connection[0]
-            length = connection[1]
-            checked_node_id = get_node_index(node_connection_id, net)
+            # gets the connected node id, and waylength
+            if connection.connection1 == node_id:
+                node_connection_id = connection.connection2
+            else:
+                node_connection_id = connection.connection1
+            length = connection.length
+
+            # gets the "true" node id and calculates the new length
+            true_node_connection_id = get_node_index(node_connection_id, net)
             new_length = net.nodes[true_node_id].final_length + length
-            if net.nodes[checked_node_id].is_checked:
+
+            # main logic of the algoryth
+            if net.nodes[true_node_connection_id].is_checked:
                 # print("noice")
                 continue
             else:
-                if net.nodes[checked_node_id].final_length == None:
-                    net.nodes[checked_node_id].final_length = new_length
-                    nodes_to_check.append((checked_node_id, new_length))
-                    net.nodes[checked_node_id].points_to = node_id
+                if net.nodes[true_node_connection_id].final_length == None:
+                    net.nodes[true_node_connection_id].final_length = new_length
+                    nodes_to_check.append((true_node_connection_id, new_length))
+                    net.nodes[true_node_connection_id].points_to = node_id
                     pass # update its final legth to ours + way length
                     # append node to the checking list
                     # redirect pointer
-                elif net.nodes[checked_node_id].final_length > new_length:
-                    net.nodes[checked_node_id].points_to = node_id
-                    net.nodes[checked_node_id].final_length = new_length
+                elif net.nodes[true_node_connection_id].final_length > new_length:
+                    net.nodes[true_node_connection_id].points_to = node_id
+                    net.nodes[true_node_connection_id].final_length = new_length
                     pass # also update length
                     # redirect pointer
+        
+        # connections = get_connected_nodes_and_lengths(node_id, net)
+        # for connection in connections:
+        #     node_connection_id = connection[0]
+        #     length = connection[1]
+        #     checked_node_id = get_node_index(node_connection_id, net)
+        #     new_length = net.nodes[true_node_id].final_length + length
+        #     if net.nodes[checked_node_id].is_checked:
+        #         # print("noice")
+        #         continue
+        #     else:
+        #         if net.nodes[checked_node_id].final_length == None:
+        #             net.nodes[checked_node_id].final_length = new_length
+        #             nodes_to_check.append((checked_node_id, new_length))
+        #             net.nodes[checked_node_id].points_to = node_id
+        #             pass # update its final legth to ours + way length
+        #             # append node to the checking list
+        #             # redirect pointer
+        #         elif net.nodes[checked_node_id].final_length > new_length:
+        #             net.nodes[checked_node_id].points_to = node_id
+        #             net.nodes[checked_node_id].final_length = new_length
+        #             pass # also update length
+        #             # redirect pointer
 
 
     path = [target_node]
