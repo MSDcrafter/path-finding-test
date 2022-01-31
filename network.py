@@ -89,6 +89,11 @@ def init():
     ### return the Preperated Network
     return net
 
+def clean_net(net):
+    for node in net.nodes:
+        node.final_length = None
+        node.is_checked = False
+        node.points_to = None
 
 def gen_dot(net, name):
     import subprocess
@@ -112,24 +117,6 @@ def get_connections(uid, net):
             connections.append(connection)
     return connections
 
-def get_connected_nodes(uid, net):
-    connections = []
-    for connection in net.connections:
-        if connection.connection1 == uid:
-            connections.append(connection.connection2)
-        elif connection.connection2 == uid:
-            connections.append(connection.connection1)
-    return connections
-
-def get_connected_nodes_and_lengths(uid, net):
-    connections = []
-    for connection in net.connections:
-        if connection.connection1 == uid:
-            connections.append((connection.connection2, connection.length))
-        elif connection.connection2 == uid:
-            connections.append((connection.connection1, connection.length))
-    return connections
-
 def get_node(uid, net):
     target_node = None
     for node in net.nodes:
@@ -149,46 +136,32 @@ def get_node_index(uid, net):
 
 def main():
     net = init()
-
-    # source_node = 6
-    # target_node = 17
-    
-    # current_node = source_node
-    # nodes_to_visit = [current_node]
-
-    # while len(nodes_to_visit)>0:
-    #     current_node = nodes_to_visit[0]
+    clean_net(net)      # not needed in this case
 
     starting_node = 9
     target_node = 16
 
-    nodes_to_check = [(starting_node, 0)]
-
-    # connections = get_connections(6, net)
-    # for connection in connections:
-    #     print(f"{connection.connection1} - {connection.connection2}")
-    # gen_dot(net, "net")
-
     net.nodes[starting_node].final_length = 0
-
-    while len(nodes_to_check)>0:
+    while True:
         # grab the node with the shortest path
-        index = 0
-        for idx, node in enumerate(nodes_to_check):
-            if node[1]<nodes_to_check[index][1]:
-                index = idx
-        
-        # print(nodes_to_check[index])
-        # node = (node id, node len)
-        node = nodes_to_check.pop(index)
-        node_id = node[0]
+        node_id = None
+        for node in net.nodes:
+            if (node.is_checked == False) and (node.final_length != None):
+                if node_id == None:
+                    node_id = node.uid
+                elif get_node(node_id, net).final_length > node.final_length:
+                    node_id = node.uid
+        # check if the network has been solved yet
+        if node_id == None:
+            break
+
+        # get the connections and "true" node id
         true_node_id = get_node_index(node_id, net)
+        connections = get_connections(node_id, net)
 
-
+        # mark the current node as checked
         net.nodes[true_node_id].is_checked = True
 
-        connections = get_connections(node_id, net)
-        # for connection in connections:
 
         for connection in connections:
             # gets the connected node id, and waylength
@@ -203,47 +176,16 @@ def main():
             new_length = net.nodes[true_node_id].final_length + length
 
             # main logic of the algoryth
-            if net.nodes[true_node_connection_id].is_checked:
-                # print("noice")
-                continue
-            else:
-                if net.nodes[true_node_connection_id].final_length == None:
-                    net.nodes[true_node_connection_id].final_length = new_length
-                    nodes_to_check.append((true_node_connection_id, new_length))
-                    net.nodes[true_node_connection_id].points_to = node_id
-                    pass # update its final legth to ours + way length
-                    # append node to the checking list
-                    # redirect pointer
-                elif net.nodes[true_node_connection_id].final_length > new_length:
-                    net.nodes[true_node_connection_id].points_to = node_id
-                    net.nodes[true_node_connection_id].final_length = new_length
-                    pass # also update length
-                    # redirect pointer
-        
-        # connections = get_connected_nodes_and_lengths(node_id, net)
-        # for connection in connections:
-        #     node_connection_id = connection[0]
-        #     length = connection[1]
-        #     checked_node_id = get_node_index(node_connection_id, net)
-        #     new_length = net.nodes[true_node_id].final_length + length
-        #     if net.nodes[checked_node_id].is_checked:
-        #         # print("noice")
-        #         continue
-        #     else:
-        #         if net.nodes[checked_node_id].final_length == None:
-        #             net.nodes[checked_node_id].final_length = new_length
-        #             nodes_to_check.append((checked_node_id, new_length))
-        #             net.nodes[checked_node_id].points_to = node_id
-        #             pass # update its final legth to ours + way length
-        #             # append node to the checking list
-        #             # redirect pointer
-        #         elif net.nodes[checked_node_id].final_length > new_length:
-        #             net.nodes[checked_node_id].points_to = node_id
-        #             net.nodes[checked_node_id].final_length = new_length
-        #             pass # also update length
-        #             # redirect pointer
+            if net.nodes[true_node_connection_id].is_checked:       # checks if node has been checked already
+                continue # Node is checked already
 
 
+            # checks if the Node doesnt have a length yet or
+            # checks if the Node length is longer than the new length
+            elif net.nodes[true_node_connection_id].final_length == None or net.nodes[true_node_connection_id].final_length > new_length:
+                net.nodes[true_node_connection_id].points_to = node_id          # updates the pointer
+                net.nodes[true_node_connection_id].final_length = new_length    # updates the length
+            
     path = [target_node]
     node = target_node
     while True:
